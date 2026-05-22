@@ -29,5 +29,3 @@ Game Name: Snow Under Paws
 3. Frozen River
 4. Home
 
-![team](/Users/tatianaatlasova/Desktop/SnowUnderPaws/Assets/_Project/Art/icon.jpeg)
-
