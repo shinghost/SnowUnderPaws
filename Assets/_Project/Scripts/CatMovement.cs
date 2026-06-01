@@ -24,19 +24,23 @@ public class CatMovement : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        animator = GetComponent<Animator>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
+        animator = GetComponentInChildren<Animator>();
+        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
     }
 
     void Update()
     {
+        
         moveInput = Input.GetAxisRaw("Horizontal");
 
         isRunning = Input.GetKey(KeyCode.LeftShift);
-        isCrawling = Input.GetKey(KeyCode.LeftControl);
+        isCrawling = Input.GetKey(KeyCode.C);
 
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded && !isCrawling)
         {
+            animator.ResetTrigger("JumpTrigger");
+            animator.SetTrigger("JumpTrigger");
+
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
 
