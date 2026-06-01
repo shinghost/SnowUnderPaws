@@ -5,7 +5,10 @@ public class CatMovement : MonoBehaviour
     [Header("Movement")]
     public float walkSpeed = 3f;
     public float runSpeed = 5f;
+    public float crawlSpeed = 1.5f;
     public float jumpForce = 8f;
+
+    public float turnDuration = 0.35f;
 
     [Header("Ground Check")]
     public Transform groundCheck;
@@ -21,6 +24,11 @@ public class CatMovement : MonoBehaviour
     private bool isRunning;
     private bool isCrawling;
 
+    private bool facingRight = true;
+    private bool isTurning = false;
+    private bool pendingFacingRight;
+    private float turnTimer = 0f;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -30,11 +38,22 @@ public class CatMovement : MonoBehaviour
 
     void Update()
     {
-        
         moveInput = Input.GetAxisRaw("Horizontal");
 
         isRunning = Input.GetKey(KeyCode.LeftShift);
-        isCrawling = Input.GetKey(KeyCode.C);
+        isCrawling = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.C);
+
+        if (!isTurning && moveInput != 0)
+        {
+            bool wantsRight = moveInput > 0;
+
+            if (wantsRight != facingRight)
+            {
+                StartTurn(wantsRight);
+                moveInput = 0f;
+            }
+        }
+
 
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded && !isCrawling)
         {
@@ -44,12 +63,17 @@ public class CatMovement : MonoBehaviour
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
 
-        if (moveInput > 0)
-            spriteRenderer.flipX = true;
-        else if (moveInput < 0)
-            spriteRenderer.flipX = false;
+        if (isTurning)
+        {
+            turnTimer -= Time.deltaTime;
 
-        animator.SetFloat("Speed", Mathf.Abs(moveInput));
+            if (turnTimer <= 0f)
+            {
+                FinishTurn();
+            }
+        }
+
+        animator.SetFloat("Speed", isTurning ? 0f : Mathf.Abs(moveInput));
         animator.SetBool("IsGrounded", isGrounded);
         animator.SetBool("IsRunning", isRunning);
         animator.SetBool("IsCrawling", isCrawling);
@@ -69,8 +93,49 @@ public class CatMovement : MonoBehaviour
             currentSpeed = runSpeed;
 
         if (isCrawling)
-            currentSpeed = walkSpeed * 0.5f;
+            currentSpeed = crawlSpeed;
+
+        if (isTurning)
+        {
+            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+            return;
+        }
 
         rb.linearVelocity = new Vector2(moveInput * currentSpeed, rb.linearVelocity.y);
     }
+
+    private void StartTurn(bool wantsRight)
+    {
+        isTurning = true;
+        pendingFacingRight = wantsRight;
+        turnTimer = turnDuration;
+
+        spriteRenderer.flipX = facingRight;
+        animator.SetFloat("Speed", 0f);
+
+
+        if (wantsRight)
+        {
+            animator.ResetTrigger("TurnRightTrigger");
+            animator.SetTrigger("TurnRightTrigger");
+        }
+        else
+        {
+            animator.ResetTrigger("TurnLeftTrigger");
+            animator.SetTrigger("TurnLeftTrigger");
+
+        }
+
+        Debug.Log("Turn wantsRight = " + wantsRight);
+    }
+
+    private void FinishTurn()
+    {
+        facingRight = pendingFacingRight;
+
+        spriteRenderer.flipX = !facingRight;
+
+        isTurning = false;
+    }
+
 }
